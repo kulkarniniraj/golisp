@@ -38,6 +38,10 @@ func repl() {
 			input1, err := reader.ReadString('\n')
 			input1 = strings.TrimSpace(input1)
 			if err != nil {
+				if err.Error() == "EOF" {
+					fmt.Println("Exiting...")
+					return
+				}
 				fmt.Println("Error:", err)
 				return
 			}

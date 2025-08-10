@@ -18,6 +18,9 @@ func initEvaluator() {
 	Env["/"] = div
 	Env["quote"] = quote
 	Env["list"] = list
+	Env["head"] = head
+	Env["tail"] = tail
+	Env["join"] = join
 }
 
 func add(tree parserToken) (parserToken, error) {
@@ -137,6 +140,47 @@ func list(tree parserToken) (parserToken, error) {
 	return parserToken{Type: PARSER_LIST, Children: eNodes}, nil
 }
 
+func head(tree parserToken) (parserToken, error) {
+	assert(tree.Type == PARSER_LIST, "invalid argument type")
+	nodes := tree.Children
+	child1, err := evaluate(nodes[1])
+	if err != nil {
+		return parserToken{}, err
+	}
+	return child1.Children[0], nil
+}
+
+func tail(tree parserToken) (parserToken, error) {
+	assert(tree.Type == PARSER_LIST, "invalid argument type")
+	nodes := tree.Children
+	child1, err := evaluate(nodes[1])
+	if err != nil {
+		return parserToken{}, err
+	}
+	return parserToken{Type: PARSER_LIST, Children: child1.Children[1:]}, nil
+}
+
+func join(tree parserToken) (parserToken, error) {
+	assert(tree.Type == PARSER_LIST, "invalid argument type")
+	nodes := tree.Children
+	enodes := make([]parserToken, 0, len(nodes))
+	joinCnt := 0
+	for _, node := range nodes[1:] {
+		evaluatedNode, err := evaluate(node)
+		if err != nil {
+			return parserToken{}, err
+		}
+		joinCnt += len(evaluatedNode.Children)
+		enodes = append(enodes, evaluatedNode)
+	}
+
+	child1 := make([]parserToken, 0, joinCnt)
+	for _, node := range enodes {
+		child1 = append(child1, node.Children...)
+	}
+	return parserToken{Type: PARSER_LIST, Children: child1}, nil
+}
+
 func evaluate(tree parserToken) (parserToken, error) {
 	if tree.Type == PARSER_SYMBOL {
 		return tree, nil
@@ -149,10 +193,14 @@ func evaluate(tree parserToken) (parserToken, error) {
 			return tree, nil
 		}
 
-		operation := tokens[0].Value.(symbol).Value
-		fun, ok := Env[operation]
+		operation, ok := tokens[0].Value.(symbol)
 		if !ok {
-			return parserToken{}, fmt.Errorf("unknown operation: %s", operation)
+			return parserToken{}, fmt.Errorf("invalid operation: %s", tokens[0].Value)
+		}
+		operationVal := operation.Value
+		fun, ok := Env[operationVal]
+		if !ok {
+			return parserToken{}, fmt.Errorf("unknown operation: %s", operationVal)
 		}
 		return fun(tree)
 
