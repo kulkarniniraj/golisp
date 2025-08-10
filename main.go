@@ -23,7 +23,12 @@ func print(tree parserToken) {
 	}
 }
 
+func init() {
+	initEvaluator()
+}
+
 func repl() {
+
 	reader := bufio.NewReader(os.Stdin)
 	for {
 		fmt.Printf("byolisp> ")
