@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -28,16 +29,16 @@ func (p parserToken) String() string {
 		case symbol:
 			return p.Value.(symbol).Value
 		case number:
-			return fmt.Sprintf("%f", p.Value.(number).Value)
+			return fmt.Sprintf("%0.2f", p.Value.(number).Value)
 		default:
 			return ""
 		}
 	case PARSER_LIST:
-		var s string
+		strs := make([]string, 0, len(p.Children))
 		for _, child := range p.Children {
-			s += " " + child.String()
+			strs = append(strs, child.String())
 		}
-		return "(" + s + ")"
+		return "(" + strings.Join(strs, " ") + ")"
 	default:
 		return ""
 	}

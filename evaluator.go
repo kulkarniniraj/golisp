@@ -16,6 +16,8 @@ func initEvaluator() {
 	Env["-"] = sub
 	Env["*"] = mul
 	Env["/"] = div
+	Env["quote"] = quote
+	Env["list"] = list
 }
 
 func add(tree parserToken) (parserToken, error) {
@@ -111,6 +113,28 @@ func div(tree parserToken) (parserToken, error) {
 		total /= arg.Value.(number).Value
 	}
 	return parserToken{Type: PARSER_SYMBOL, Value: number{Value: total}}, nil
+}
+
+func quote(tree parserToken) (parserToken, error) {
+	assert(tree.Type == PARSER_LIST, "invalid argument type")
+	nodes := tree.Children
+
+	return parserToken{Type: PARSER_LIST, Children: nodes[1:]}, nil
+}
+
+func list(tree parserToken) (parserToken, error) {
+	assert(tree.Type == PARSER_LIST, "invalid argument type")
+	nodes := tree.Children
+	eNodes := make([]parserToken, 0, len(nodes))
+	for _, node := range nodes[1:] {
+		evaluatedNode, err := evaluate(node)
+		if err != nil {
+			return parserToken{}, err
+		}
+		eNodes = append(eNodes, evaluatedNode)
+	}
+
+	return parserToken{Type: PARSER_LIST, Children: eNodes}, nil
 }
 
 func evaluate(tree parserToken) (parserToken, error) {
