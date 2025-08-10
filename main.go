@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func repl() {
@@ -12,11 +14,18 @@ func repl() {
 	for {
 		fmt.Printf("byolisp> ")
 		var input string
-		input, err := reader.ReadString('\n')
-		input = strings.TrimSpace(input)
-		if err != nil {
-			fmt.Println("Error:", err)
-			return
+		// read until blank line
+		for {
+			input1, err := reader.ReadString('\n')
+			input1 = strings.TrimSpace(input1)
+			if err != nil {
+				fmt.Println("Error:", err)
+				return
+			}
+			input += input1
+			if input1 == "" {
+				break
+			}
 		}
 		switch input {
 		case "quit":
@@ -26,17 +35,13 @@ func repl() {
 			tree, err := parse(tokens)
 			if err != nil {
 				fmt.Println("Parse Error:", err)
-				return
+				continue
 			}
-			fmt.Println(tree)
-			// "+ 1 2 23 45.5 (/ 1 2 3)"
-			// fmt.Printf("Your input: %s\n", input)
-			// fmt.Printf("Tokens: %v\n", polishCalc(tokens))
-			// fmt.Println(polishCalc(tokens))
+			log.Debug("Tree:", tree)
 			evaluatedTree, err := evaluate(tree)
 			if err != nil {
 				fmt.Println("Evaluate Error:", err)
-				return
+				continue
 			}
 			fmt.Println(evaluatedTree)
 		}
