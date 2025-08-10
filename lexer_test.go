@@ -6,12 +6,12 @@ func TestScan(t *testing.T) {
 	input := "(+ 1 2 3 (* 5 6 7) 8)"
 	exp_output := []token{
 		symbol{OPEN_PAREN, "("},
-		symbol{OPERATOR, "+"},
+		symbol{SYMBOL, "+"},
 		number{Value: 1},
 		number{Value: 2},
 		number{Value: 3},
 		symbol{OPEN_PAREN, "("},
-		symbol{OPERATOR, "*"},
+		symbol{SYMBOL, "*"},
 		number{Value: 5},
 		number{Value: 6},
 		number{Value: 7},
@@ -31,9 +31,9 @@ func TestScan(t *testing.T) {
 }
 
 func TestScanInvalid(t *testing.T) {
-	input := "(+ 1 2 3 (* 5 6 7) 8 asd"
+	input := "(+ 1 2 3 (* 5 6 7) 8 asd #qwe"
 	out, err := Scan(input)
-	t.Log(out)
+	t.Log("scan result ", out)
 	if err == nil {
 		t.Errorf("Scan error: expected error, got nil")
 

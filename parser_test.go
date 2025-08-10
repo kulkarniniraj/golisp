@@ -9,12 +9,12 @@ func TestParse(t *testing.T) {
 	expOutput := parserToken{
 		Type: PARSER_LIST,
 		Children: []parserToken{
-			{Type: PARSER_SYMBOL, Value: symbol{OPERATOR, "+"}},
+			{Type: PARSER_SYMBOL, Value: symbol{SYMBOL, "+"}},
 			{Type: PARSER_SYMBOL, Value: number{Value: 1}},
 			{Type: PARSER_SYMBOL, Value: number{Value: 2}},
 			{Type: PARSER_SYMBOL, Value: number{Value: 3}},
 			{Type: PARSER_LIST, Children: []parserToken{
-				{Type: PARSER_SYMBOL, Value: symbol{OPERATOR, "*"}},
+				{Type: PARSER_SYMBOL, Value: symbol{SYMBOL, "*"}},
 				{Type: PARSER_SYMBOL, Value: number{Value: 5}},
 				{Type: PARSER_SYMBOL, Value: number{Value: 6}},
 				{Type: PARSER_SYMBOL, Value: number{Value: 7}},

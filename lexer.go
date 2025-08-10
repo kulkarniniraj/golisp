@@ -11,7 +11,7 @@ type TokenType int
 const (
 	OPEN_PAREN TokenType = iota
 	CLOSE_PAREN
-	OPERATOR
+	SYMBOL
 	NUMBER
 	EMPTY
 )
@@ -22,8 +22,8 @@ func (t TokenType) String() string {
 		return "OPEN_PAREN"
 	case CLOSE_PAREN:
 		return "CLOSE_PAREN"
-	case OPERATOR:
-		return "OPERATOR"
+	case SYMBOL:
+		return "SYMBOL"
 	case NUMBER:
 		return "NUMBER"
 	default:
@@ -76,19 +76,20 @@ func matchToToken(match []string) (token, error) {
 		if idx == 0 || idx == 1 || val == "" {
 			continue
 		}
+		//  whiteSpace, number, openParen, closeParen, operator, errorPat
 
 		switch idx {
 		case 2:
 			return empty{}, nil
 		case 3:
-			return symbol{OPERATOR, val}, nil
-		case 4:
 			fVal, _ := strconv.ParseFloat(val, 64)
 			return number{fVal}, nil
-		case 6:
+		case 5:
 			return symbol{OPEN_PAREN, val}, nil
-		case 7:
+		case 6:
 			return symbol{CLOSE_PAREN, val}, nil
+		case 7:
+			return symbol{SYMBOL, val}, nil
 		default:
 			return nil, fmt.Errorf("invalid token")
 		}
@@ -99,12 +100,13 @@ func matchToToken(match []string) (token, error) {
 func Scan(input string) ([]token, error) {
 	var tokens []token
 	whiteSpace := `(?P<ws>\s+)`
-	operator := `(?P<op>\+|-|\*|/)`
+	symbolChar := `[a-zA-Z0-9+\-*/_=<>@$%&?!~^]`
+	operator := `(?P<op>` + symbolChar + `+)`
 	number := `(?P<num>\d+(\.\d+)?|\.\d+)`
 	openParen := `(?P<openParen>\()`
 	closeParen := `(?P<closeParen>\))`
 	errorPat := `(?P<error>.+)`
-	pattern := fmt.Sprintf("(%s|%s|%s|%s|%s|%s)", whiteSpace, operator, number, openParen, closeParen, errorPat)
+	pattern := fmt.Sprintf("(%s|%s|%s|%s|%s|%s)", whiteSpace, number, openParen, closeParen, operator, errorPat)
 	re := regexp.MustCompile(pattern)
 
 	matches := re.FindAllStringSubmatch(input, -1)
