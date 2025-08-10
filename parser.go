@@ -38,7 +38,7 @@ func (p parserToken) String() string {
 
 func parse(tokens []token) (parserToken, error) {
 	log.SetLevel(log.InfoLevel)
-	log.Info("Parsing tokens:", len(tokens))
+	log.Debug("Parsing tokens:", len(tokens))
 	// stack of parserToken, size of stack is len(tokens)
 	stack := make([]parserToken, 0, len(tokens))
 
