@@ -35,7 +35,7 @@ type token struct {
 }
 
 func (t token) String() string {
-	return fmt.Sprintf("* %s: %s *", t.Type.String(), t.Value)
+	return fmt.Sprintf("{ %s: \"%s\" }", t.Type.String(), t.Value)
 }
 
 func matchToToken(match []string) (token, error) {
@@ -46,7 +46,7 @@ func matchToToken(match []string) (token, error) {
 
 		switch idx {
 		case 2:
-			return token{}, fmt.Errorf("Whitespace")
+			return token{}, nil
 		case 3:
 			return token{OPERATOR, val}, nil
 		case 4:
@@ -55,6 +55,8 @@ func matchToToken(match []string) (token, error) {
 			return token{OPEN_PAREN, val}, nil
 		case 7:
 			return token{CLOSE_PAREN, val}, nil
+		default:
+			return token{}, fmt.Errorf("invalid token")
 		}
 	}
 	return token{}, fmt.Errorf("invalid token")
@@ -67,17 +69,21 @@ func Scan(input string) ([]token, error) {
 	number := `(?P<num>\d+(\.\d+)?|\.\d+)`
 	openParen := `(?P<openParen>\()`
 	closeParen := `(?P<closeParen>\))`
-	pattern := fmt.Sprintf("(%s|%s|%s|%s|%s)", whiteSpace, operator, number, openParen, closeParen)
+	errorPat := `(?P<error>.+)`
+	pattern := fmt.Sprintf("(%s|%s|%s|%s|%s|%s)", whiteSpace, operator, number, openParen, closeParen, errorPat)
 	re := regexp.MustCompile(pattern)
 
 	matches := re.FindAllStringSubmatch(input, -1)
 
 	for _, match := range matches {
-		token, err := matchToToken(match)
+		mToken, err := matchToToken(match)
 		if err != nil {
+			return nil, err
+		}
+		if mToken == (token{}) {
 			continue
 		}
-		tokens = append(tokens, token)
+		tokens = append(tokens, mToken)
 	}
 
 	return tokens, nil
