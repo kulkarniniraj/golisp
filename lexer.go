@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 )
 
 type TokenType int
@@ -12,6 +13,7 @@ const (
 	CLOSE_PAREN
 	OPERATOR
 	NUMBER
+	EMPTY
 )
 
 func (t TokenType) String() string {
@@ -29,13 +31,44 @@ func (t TokenType) String() string {
 	}
 }
 
-type token struct {
-	Type  TokenType
+type token interface {
+	GetType() TokenType
+}
+
+type empty struct {
+}
+
+func (e empty) GetType() TokenType {
+	return EMPTY
+}
+
+func (e empty) String() string {
+	return fmt.Sprintf(" %s ", e.GetType().String())
+}
+
+type symbol struct {
+	Type  TokenType // open paren, close paren, operator
 	Value string
 }
 
-func (t token) String() string {
-	return fmt.Sprintf("{ %s: \"%s\" }", t.Type.String(), t.Value)
+func (s symbol) GetType() TokenType {
+	return s.Type
+}
+
+func (s symbol) String() string {
+	return fmt.Sprintf(" %s: \"%s\" ", s.Type.String(), s.Value)
+}
+
+type number struct {
+	Value float64
+}
+
+func (n number) GetType() TokenType {
+	return NUMBER
+}
+
+func (n number) String() string {
+	return fmt.Sprintf(" %s: %f ", n.GetType().String(), n.Value)
 }
 
 func matchToToken(match []string) (token, error) {
@@ -46,20 +79,21 @@ func matchToToken(match []string) (token, error) {
 
 		switch idx {
 		case 2:
-			return token{}, nil
+			return empty{}, nil
 		case 3:
-			return token{OPERATOR, val}, nil
+			return symbol{OPERATOR, val}, nil
 		case 4:
-			return token{NUMBER, val}, nil
+			fVal, _ := strconv.ParseFloat(val, 64)
+			return number{fVal}, nil
 		case 6:
-			return token{OPEN_PAREN, val}, nil
+			return symbol{OPEN_PAREN, val}, nil
 		case 7:
-			return token{CLOSE_PAREN, val}, nil
+			return symbol{CLOSE_PAREN, val}, nil
 		default:
-			return token{}, fmt.Errorf("invalid token")
+			return nil, fmt.Errorf("invalid token")
 		}
 	}
-	return token{}, fmt.Errorf("invalid token")
+	return nil, fmt.Errorf("invalid token")
 }
 
 func Scan(input string) ([]token, error) {
@@ -80,7 +114,7 @@ func Scan(input string) ([]token, error) {
 		if err != nil {
 			return nil, err
 		}
-		if mToken == (token{}) {
+		if mToken == (empty{}) {
 			continue
 		}
 		tokens = append(tokens, mToken)

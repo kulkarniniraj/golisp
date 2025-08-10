@@ -9,6 +9,20 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+func print(tree parserToken) {
+	switch tree.Type {
+	case PARSER_LIST:
+		fmt.Println(tree)
+	default:
+		switch tree.Value.(type) {
+		case symbol:
+			fmt.Println(tree.Value.(symbol).Value)
+		case number:
+			fmt.Println(tree.Value.(number).Value)
+		}
+	}
+}
+
 func repl() {
 	reader := bufio.NewReader(os.Stdin)
 	for {
@@ -43,7 +57,7 @@ func repl() {
 				fmt.Println("Evaluate Error:", err)
 				continue
 			}
-			fmt.Println(evaluatedTree)
+			print(evaluatedTree)
 		}
 	}
 }

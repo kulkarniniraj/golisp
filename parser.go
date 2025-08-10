@@ -24,7 +24,14 @@ type parserToken struct {
 func (p parserToken) String() string {
 	switch p.Type {
 	case PARSER_SYMBOL:
-		return p.Value.String()
+		switch p.Value.(type) {
+		case symbol:
+			return p.Value.(symbol).Value
+		case number:
+			return fmt.Sprintf("%f", p.Value.(number).Value)
+		default:
+			return ""
+		}
 	case PARSER_LIST:
 		var s string
 		for _, child := range p.Children {
@@ -36,6 +43,10 @@ func (p parserToken) String() string {
 	}
 }
 
+func isOpenParen(token parserToken) bool {
+	return token.Type == PARSER_SYMBOL && token.Value.GetType() == OPEN_PAREN
+}
+
 func parse(tokens []token) (parserToken, error) {
 	log.SetLevel(log.InfoLevel)
 	log.Debug("Parsing tokens:", len(tokens))
@@ -44,7 +55,7 @@ func parse(tokens []token) (parserToken, error) {
 
 	if len(tokens) == 0 {
 		return parserToken{Type: PARSER_LIST}, nil
-	} else if tokens[0].Type != OPEN_PAREN {
+	} else if tokens[0].GetType() != OPEN_PAREN {
 		if len(tokens) != 1 {
 			return parserToken{}, fmt.Errorf("multiple symbols without list")
 		}
@@ -53,13 +64,13 @@ func parse(tokens []token) (parserToken, error) {
 		idx := 0
 		for idx < len(tokens) {
 			log.Debug("Processing index: ", idx)
-			if tokens[idx].Type != CLOSE_PAREN {
+			if tokens[idx].GetType() != CLOSE_PAREN {
 				log.Debug("Adding token: ", tokens[idx])
 				stack = append(stack, parserToken{Type: PARSER_SYMBOL, Value: tokens[idx]})
 			} else {
 				log.Debug("Found close paren")
 				temp := make([]parserToken, 0, len(tokens))
-				for !(stack[len(stack)-1].Value.Type == OPEN_PAREN && stack[len(stack)-1].Type == PARSER_SYMBOL) {
+				for !isOpenParen(stack[len(stack)-1]) {
 					temp = append(temp, stack[len(stack)-1])
 					stack = stack[:len(stack)-1]
 				}

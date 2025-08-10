@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"strconv"
 )
 
 func evaluate(tree parserToken) (parserToken, error) {
@@ -47,7 +46,7 @@ func evaluate(tree parserToken) (parserToken, error) {
 			return tree, nil
 		}
 
-		operation := tokens[0].Value.Value
+		operation := tokens[0].Value.(symbol).Value
 		args := []float64{}
 
 		for _, token := range tokens[1:] {
@@ -55,8 +54,8 @@ func evaluate(tree parserToken) (parserToken, error) {
 			if err != nil {
 				return parserToken{}, err
 			}
-			if eToken.Value.Type == NUMBER {
-				n, _ := strconv.ParseFloat(eToken.Value.Value, 64)
+			if eToken.Value.GetType() == NUMBER {
+				n := eToken.Value.(number).Value
 				args = append(args, n)
 			}
 		}
@@ -79,9 +78,8 @@ func evaluate(tree parserToken) (parserToken, error) {
 
 		return parserToken{
 			Type: PARSER_SYMBOL,
-			Value: token{
-				Type:  NUMBER,
-				Value: fmt.Sprintf("%f", retVal),
+			Value: number{
+				Value: retVal,
 			},
 		}, nil
 	}

@@ -5,19 +5,19 @@ import "testing"
 func TestScan(t *testing.T) {
 	input := "(+ 1 2 3 (* 5 6 7) 8)"
 	exp_output := []token{
-		{OPEN_PAREN, "("},
-		{OPERATOR, "+"},
-		{NUMBER, "1"},
-		{NUMBER, "2"},
-		{NUMBER, "3"},
-		{OPEN_PAREN, "("},
-		{OPERATOR, "*"},
-		{NUMBER, "5"},
-		{NUMBER, "6"},
-		{NUMBER, "7"},
-		{CLOSE_PAREN, ")"},
-		{NUMBER, "8"},
-		{CLOSE_PAREN, ")"},
+		symbol{OPEN_PAREN, "("},
+		symbol{OPERATOR, "+"},
+		number{Value: 1},
+		number{Value: 2},
+		number{Value: 3},
+		symbol{OPEN_PAREN, "("},
+		symbol{OPERATOR, "*"},
+		number{Value: 5},
+		number{Value: 6},
+		number{Value: 7},
+		symbol{CLOSE_PAREN, ")"},
+		number{Value: 8},
+		symbol{CLOSE_PAREN, ")"},
 	}
 	tokens, err := Scan(input)
 	if err != nil {
