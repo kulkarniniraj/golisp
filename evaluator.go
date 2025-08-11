@@ -21,6 +21,7 @@ func initEvaluator() {
 	Env["head"] = head
 	Env["tail"] = tail
 	Env["join"] = join
+	Env["eval"] = evalFun
 }
 
 func add(tree parserToken) (parserToken, error) {
@@ -179,6 +180,16 @@ func join(tree parserToken) (parserToken, error) {
 		child1 = append(child1, node.Children...)
 	}
 	return parserToken{Type: PARSER_LIST, Children: child1}, nil
+}
+
+func evalFun(tree parserToken) (parserToken, error) {
+	assert(tree.Type == PARSER_LIST, "invalid argument type")
+	nodes := tree.Children
+	child1, err := evaluate(nodes[1])
+	if err != nil {
+		return parserToken{}, err
+	}
+	return evaluate(child1)
 }
 
 func evaluate(tree parserToken) (parserToken, error) {
