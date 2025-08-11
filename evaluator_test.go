@@ -46,7 +46,7 @@ func TestEvaluateListOps2(t *testing.T) {
 	tree, _ := parse(tokens)
 	output, _ := evaluate(tree)
 	if len(output.Children) != len(exp_output.Children) {
-		t.Errorf("Expected %f, got %f", exp_output, output.Value.(number).Value)
+		t.Errorf("Expected %v, got %v", exp_output, output.Value.(number).Value)
 	}
 }
 
@@ -58,6 +58,6 @@ func TestEvaluateListOps3(t *testing.T) {
 	tree, _ := parse(tokens)
 	output, _ := evaluate(tree)
 	if len(output.Children) != len(exp_output.Children) {
-		t.Errorf("Expected %f, got %f", exp_output, output.Value.(number).Value)
+		t.Errorf("Expected %v, got %v", exp_output, output.Value.(number).Value)
 	}
 }
