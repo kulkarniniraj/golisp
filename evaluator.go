@@ -6,22 +6,46 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type EnvFunc func(parserToken) (parserToken, error)
+type EnvValType int
+
+const (
+	ENVVAL_SYMBOL EnvValType = iota
+	ENVVAL_FUNCTION
+)
+
+type EnvVal interface {
+	GetType() EnvValType
+}
+type EnvFunc struct {
+	Fun func(parserToken) (parserToken, error)
+}
+
+func (e EnvFunc) GetType() EnvValType {
+	return ENVVAL_FUNCTION
+}
+
+type EnvSymbol struct {
+	Val parserToken
+}
+
+func (e EnvSymbol) GetType() EnvValType {
+	return ENVVAL_SYMBOL
+}
 
 // var Env = make(map[string]EnvFunc)
-var Env = make(map[string]EnvFunc, 4)
+var Env = make(map[string]EnvVal, 4)
 
 func initEvaluator() {
-	Env["+"] = add
-	Env["-"] = sub
-	Env["*"] = mul
-	Env["/"] = div
-	Env["quote"] = quote
-	Env["list"] = list
-	Env["head"] = head
-	Env["tail"] = tail
-	Env["join"] = join
-	Env["eval"] = evalFun
+	Env["+"] = EnvFunc{Fun: add}
+	Env["-"] = EnvFunc{Fun: sub}
+	Env["*"] = EnvFunc{Fun: mul}
+	Env["/"] = EnvFunc{Fun: div}
+	Env["quote"] = EnvFunc{Fun: quote}
+	Env["list"] = EnvFunc{Fun: list}
+	Env["head"] = EnvFunc{Fun: head}
+	Env["tail"] = EnvFunc{Fun: tail}
+	Env["join"] = EnvFunc{Fun: join}
+	Env["eval"] = EnvFunc{Fun: evalFun}
 }
 
 func add(tree parserToken) (parserToken, error) {
@@ -213,7 +237,8 @@ func evaluate(tree parserToken) (parserToken, error) {
 		if !ok {
 			return parserToken{}, fmt.Errorf("unknown operation: %s", operationVal)
 		}
-		return fun(tree)
+		assert(fun.GetType() == ENVVAL_FUNCTION, "invalid operation type")
+		return fun.(EnvFunc).Fun(tree)
 
 	}
 }
