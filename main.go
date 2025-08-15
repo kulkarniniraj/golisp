@@ -1,10 +1,7 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"os"
-	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -29,27 +26,30 @@ func init() {
 
 func repl() {
 
-	reader := bufio.NewReader(os.Stdin)
+	// reader := bufio.NewReader(os.Stdin)
 	for {
-		fmt.Printf("byolisp> ")
+		// fmt.Printf("byolisp> ")
 		var input string
 		// read until blank line
-		for {
-			input1, err := reader.ReadString('\n')
-			input1 = strings.TrimSpace(input1)
-			if err != nil {
-				if err.Error() == "EOF" {
-					fmt.Println("Exiting...")
-					return
-				}
-				fmt.Println("Error:", err)
+		// for {
+		// input1, err := reader.ReadString('\n')
+		input, err := inputReader()
+		// input = input1
+		// input1 = strings.TrimSpace(input1)
+		// fmt.Println("input1", input1)
+		if err != nil {
+			if err.Error() == "EOF" {
+				fmt.Println("Exiting...")
 				return
 			}
-			input += input1
-			if input1 == "" {
-				break
-			}
+			fmt.Println("Error:", err)
+			return
 		}
+		// input += input1
+		// if input1 == "" {
+		// 	break
+		// }
+		// }
 		switch input {
 		case "quit":
 			return
