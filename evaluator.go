@@ -46,10 +46,14 @@ func initEvaluator() {
 	Env["tail"] = EnvFunc{Fun: tail}
 	Env["join"] = EnvFunc{Fun: join}
 	Env["eval"] = EnvFunc{Fun: evalFun}
+	Env["def"] = EnvFunc{Fun: def}
 }
 
 func add(tree parserToken) (parserToken, error) {
 	log.SetLevel(log.InfoLevel)
+	log.Debug(tree.Type, tree.Type == PARSER_LIST)
+	log.Debug(tree.Value)
+	log.Debug(tree.Children)
 	assert(tree.Type == PARSER_LIST, "invalid argument type")
 	args := tree.Children
 	eArgs := make([]parserToken, 0, len(args))
@@ -216,9 +220,39 @@ func evalFun(tree parserToken) (parserToken, error) {
 	return evaluate(child1)
 }
 
+func def(tree parserToken) (parserToken, error) {
+	// (def a 5)
+	assert(tree.Type == PARSER_LIST, "invalid argument type")
+	nodes := tree.Children
+	variable := nodes[1]
+	assert(variable.Type == PARSER_SYMBOL, "invalid argument type")
+	assert(variable.Value.GetType() == SYMBOL, "invalid argument type")
+	value, err := evaluate(nodes[2])
+	if err != nil {
+		return parserToken{}, err
+	}
+
+	Env[variable.Value.(symbol).Value] = EnvSymbol{Val: value}
+	return parserToken{}, nil
+}
 func evaluate(tree parserToken) (parserToken, error) {
 	if tree.Type == PARSER_SYMBOL {
-		return tree, nil
+		switch tree.Value.(type) {
+		case symbol:
+			val := Env[tree.Value.(symbol).Value]
+			switch val := val.(type) {
+			case EnvSymbol:
+				return val.Val, nil
+			case EnvFunc:
+				return tree, nil
+			default:
+				return parserToken{}, fmt.Errorf("invalid symbol type: %s", tree.Value)
+			}
+		case number:
+			return tree, nil
+		default:
+			return parserToken{}, fmt.Errorf("invalid symbol type: %s", tree.Value)
+		}
 	} else {
 		tokens := tree.Children
 
@@ -228,10 +262,11 @@ func evaluate(tree parserToken) (parserToken, error) {
 			return tree, nil
 		}
 
-		operation, ok := tokens[0].Value.(symbol)
-		if !ok {
-			return parserToken{}, fmt.Errorf("invalid operation: %s", tokens[0].Value)
+		operationPT, err := evaluate(tokens[0])
+		if err != nil {
+			return parserToken{}, err
 		}
+		operation := operationPT.Value.(symbol)
 		operationVal := operation.Value
 		fun, ok := Env[operationVal]
 		if !ok {
