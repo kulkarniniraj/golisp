@@ -122,15 +122,50 @@ func TestEvaluateListOps3(t *testing.T) {
 	}
 }
 
-// // // tes quote
-// // func TestEvaluateQuote(t *testing.T) {
-// // 	initEvaluator(GlobalEnv)
-// // 	input := "(quote (1 2 3))"
-// // 	exp_output := parserToken{Type: PARSER_LIST, Children: []parserToken{{Type: PARSER_SYMBOL, Value: symbol{SYMBOL, "1"}}, {Type: PARSER_SYMBOL, Value: symbol{SYMBOL, "2"}}, {Type: PARSER_SYMBOL, Value: symbol{SYMBOL, "3"}}}}
-// // 	tokens, _ := Scan(input)
-// // 	tree, _ := parse(tokens)
-// // 	output, _ := evaluate(GlobalEnv, tree)
-// // 	if len(output.Children) != len(exp_output.Children) {
-// // 		t.Errorf("Expected %v, got %v", exp_output, output)
-// // 	}
-// // }
+// test evalFun function
+func TestEvaluateEval(t *testing.T) {
+	initEvaluator(GlobalEnv)
+	input := "(eval (list + 1 2))"
+	exp_output := float64(1 + 2)
+	tokens, _ := Scan(input)
+	tree, _ := parse(tokens)
+	output, err := evaluate(GlobalEnv, tree)
+	if err != nil {
+		t.Errorf("Error: %s", err)
+	}
+	if output.(ParserNumber).Value != exp_output {
+		t.Errorf("Expected %f, got %f", exp_output, output.(ParserNumber).Value)
+	}
+}
+
+// test quote
+func TestEvaluateQuote(t *testing.T) {
+	initEvaluator(GlobalEnv)
+	input := "(quote (1 2 3))"
+	exp_output := ParserList{Children: []ParserToken{
+		ParserNumber{Value: 1},
+		ParserNumber{Value: 2},
+		ParserNumber{Value: 3}}}
+	tokens, _ := Scan(input)
+	tree, _ := parse(tokens)
+	output, _ := evaluate(GlobalEnv, tree)
+	if len(output.(ParserList).Children) != len(exp_output.Children) {
+		t.Errorf("Expected %v, got %v", exp_output, output)
+	}
+}
+
+// test def
+func TestEvaluateDef(t *testing.T) {
+	initEvaluator(GlobalEnv)
+	input := "(def a 5)"
+	tokens, _ := Scan(input)
+	tree, _ := parse(tokens)
+	output, _ := evaluate(GlobalEnv, tree)
+	val, ok := GlobalEnv["a"]
+	if !ok {
+		t.Errorf("Expected %v, got %v", output, val)
+	}
+	if val.(ParserNumber).Value != float64(5) {
+		t.Errorf("Expected %f, got %f", float64(5), val.(ParserNumber).Value)
+	}
+}

@@ -18,8 +18,8 @@ func initEvaluator(Env map[string]ParserToken) map[string]ParserToken {
 	Env["head"] = ParserFunc{Fun: head}
 	Env["tail"] = ParserFunc{Fun: tail}
 	Env["join"] = ParserFunc{Fun: join}
-	// Env["eval"] = ParserFunc{Fun: evalFun}
-	// Env["def"] = ParserFunc{Fun: def}
+	Env["eval"] = ParserFunc{Fun: evalFun}
+	Env["def"] = ParserFunc{Fun: def}
 	return Env
 }
 
@@ -214,31 +214,41 @@ func join(Env map[string]ParserToken, tree ParserToken) (ParserToken, error) {
 	return ParserList{Children: child1}, nil
 }
 
-// func evalFun(Env map[string]EnvVal, tree parserToken) (parserToken, error) {
-// 	assert(tree.Type == PARSER_LIST, "invalid argument type")
-// 	nodes := tree.Children
-// 	child1, err := evaluate(Env, nodes[1])
-// 	if err != nil {
-// 		return parserToken{}, err
-// 	}
-// 	return evaluate(Env, child1)
-// }
+func evalFun(Env map[string]ParserToken, tree ParserToken) (ParserToken, error) {
+	list, ok := tree.(ParserList)
+	if !ok {
+		return ParserList{}, fmt.Errorf("invalid argument type")
+	}
 
-// func def(Env map[string]EnvVal, tree parserToken) (parserToken, error) {
-// 	// (def a 5)
-// 	assert(tree.Type == PARSER_LIST, "invalid argument type")
-// 	nodes := tree.Children
-// 	variable := nodes[1]
-// 	assert(variable.Type == PARSER_SYMBOL, "invalid argument type")
-// 	assert(variable.Value.GetType() == SYMBOL, "invalid argument type")
-// 	value, err := evaluate(Env, nodes[2])
-// 	if err != nil {
-// 		return parserToken{}, err
-// 	}
+	nodes := list.Children
+	child1, err := evaluate(Env, nodes[1])
+	if err != nil {
+		return ParserList{}, err
+	}
+	return evaluate(Env, child1)
+}
 
-// 	Env[variable.Value.(symbol).Value] = EnvSymbol{Val: value}
-// 	return parserToken{}, nil
-// }
+func def(Env map[string]ParserToken, tree ParserToken) (ParserToken, error) {
+	list, ok := tree.(ParserList)
+	if !ok {
+		return ParserList{}, fmt.Errorf("invalid argument type")
+	}
+	nodes := list.Children
+	variable := nodes[1]
+	symbol, ok := variable.(ParserSymbol)
+	if !ok {
+		return ParserList{}, fmt.Errorf("invalid argument type")
+	}
+	value := nodes[2]
+
+	value, err := evaluate(Env, value)
+	if err != nil {
+		return ParserList{}, err
+	}
+
+	Env[symbol.Value] = value
+	return value, nil
+}
 
 // func lambda(Env map[string]EnvVal, tree parserToken) (parserToken, error) {
 // 	assert(tree.Type == PARSER_LIST, "invalid argument type")
