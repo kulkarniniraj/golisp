@@ -24,52 +24,26 @@ func init() {
 	initEvaluator()
 }
 
-func repl() {
-
-	// reader := bufio.NewReader(os.Stdin)
-	for {
-		// fmt.Printf("byolisp> ")
-		var input string
-		// read until blank line
-		// for {
-		// input1, err := reader.ReadString('\n')
-		input, err := inputReader()
-		// input = input1
-		// input1 = strings.TrimSpace(input1)
-		// fmt.Println("input1", input1)
+func repl(input string) {
+	switch input {
+	case "quit":
+		return
+	default:
+		tokens, _ := Scan(input)
+		tree, err := parse(tokens)
 		if err != nil {
-			if err.Error() == "EOF" {
-				fmt.Println("Exiting...")
-				return
-			}
-			fmt.Println("Error:", err)
+			fmt.Println("Parse Error:", err)
 			return
 		}
-		// input += input1
-		// if input1 == "" {
-		// 	break
-		// }
-		// }
-		switch input {
-		case "quit":
+		log.Debug("Tree:", tree)
+		evaluatedTree, err := evaluate(tree)
+		if err != nil {
+			fmt.Println("Evaluate Error:", err)
 			return
-		default:
-			tokens, _ := Scan(input)
-			tree, err := parse(tokens)
-			if err != nil {
-				fmt.Println("Parse Error:", err)
-				continue
-			}
-			log.Debug("Tree:", tree)
-			evaluatedTree, err := evaluate(tree)
-			if err != nil {
-				fmt.Println("Evaluate Error:", err)
-				continue
-			}
-			print(evaluatedTree)
 		}
+		print(evaluatedTree)
 	}
 }
 func main() {
-	repl()
+	setupInputReader()
 }
