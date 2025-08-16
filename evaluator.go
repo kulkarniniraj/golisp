@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"maps"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -20,6 +21,7 @@ func initEvaluator(Env map[string]ParserToken) map[string]ParserToken {
 	Env["join"] = ParserFunc{Fun: join}
 	Env["eval"] = ParserFunc{Fun: evalFun}
 	Env["def"] = ParserFunc{Fun: def}
+	Env["lambda"] = ParserFunc{Fun: lambda}
 	return Env
 }
 
@@ -250,14 +252,39 @@ func def(Env map[string]ParserToken, tree ParserToken) (ParserToken, error) {
 	return value, nil
 }
 
-// func lambda(Env map[string]EnvVal, tree parserToken) (parserToken, error) {
-// 	assert(tree.Type == PARSER_LIST, "invalid argument type")
-// 	assert(len(tree.Children) == 3, "Need arglist and body for lambda")
+func lambda(Env map[string]ParserToken, tree ParserToken) (ParserToken, error) {
+	list, ok := tree.(ParserList)
+	if !ok {
+		return ParserList{}, fmt.Errorf("invalid argument type")
+	}
+	assert(len(list.Children) == 3, "Need arglist and body for lambda")
 
-// 	arglist := tree.Children[1]
-// 	body := tree.Children[2]
+	arglist := list.Children[1].(ParserList).Children
+	body := list.Children[2]
 
-// }
+	fun := func(Env map[string]ParserToken, tree ParserToken) (ParserToken, error) {
+		list, ok := tree.(ParserList)
+		if !ok {
+			return ParserList{}, fmt.Errorf("invalid argument type")
+		}
+		args := list.Children[1:]
+		assert(len(args) == len(arglist), "Number of arguments does not match")
+
+		localEnv := maps.Clone(Env)
+		for idx, arg := range args {
+			localEnv[arglist[idx].(ParserSymbol).Value] = arg
+		}
+
+		output, err := evaluate(localEnv, body)
+		if err != nil {
+			return ParserList{}, err
+		}
+
+		return output, nil
+	}
+	return ParserFunc{Fun: fun}, nil
+}
+
 func evaluate(Env map[string]ParserToken, tree ParserToken) (ParserToken, error) {
 	switch tree := tree.(type) {
 	case ParserSymbol:
