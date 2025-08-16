@@ -6,23 +6,26 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func print(tree parserToken) {
-	switch tree.Type {
-	case PARSER_LIST:
-		fmt.Println(tree)
-	default:
-		switch tree.Value.(type) {
-		case symbol:
-			fmt.Println(tree.Value.(symbol).Value)
-		case number:
-			fmt.Println(tree.Value.(number).Value)
+func print(tree ParserToken, indent int) {
+	switch tree := tree.(type) {
+	case ParserList:
+		for _, child := range tree.Children {
+			print(child, indent+1)
 		}
+	case ParserSymbol:
+		fmt.Println(tree.Value)
+	case ParserNumber:
+		fmt.Println(tree.Value)
+	case ParserFunc:
+		fmt.Println("<func>")
+	default:
+		fmt.Println(tree)
 	}
 }
 
-// func init() {
-// 	GlobalEnv = initEvaluator(GlobalEnv)
-// }
+func init() {
+	GlobalEnv = initEvaluator(GlobalEnv)
+}
 
 func repl(input string) {
 	switch input {
@@ -41,9 +44,10 @@ func repl(input string) {
 			fmt.Println("Evaluate Error:", err)
 			return
 		}
-		print(evaluatedTree)
+		print(evaluatedTree, 0)
 	}
 }
+
 func main() {
 	_ = initEvaluator(GlobalEnv)
 	setupInputReader()

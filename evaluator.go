@@ -259,16 +259,16 @@ func def(Env map[string]ParserToken, tree ParserToken) (ParserToken, error) {
 
 // }
 func evaluate(Env map[string]ParserToken, tree ParserToken) (ParserToken, error) {
-	switch tree.(type) {
+	switch tree := tree.(type) {
 	case ParserSymbol:
-		val := Env[tree.(ParserSymbol).Value]
+		val := Env[tree.Value]
 		return val, nil
 	case ParserNumber:
 		return tree, nil
 	case ParserFunc:
 		return tree, nil
 	case ParserList:
-		tokens := tree.(ParserList).Children
+		tokens := tree.Children
 
 		if len(tokens) == 0 {
 			// fmt.Println("Invalid token seq")
