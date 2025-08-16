@@ -17,7 +17,7 @@ type EnvVal interface {
 	GetType() EnvValType
 }
 type EnvFunc struct {
-	Fun func(parserToken) (parserToken, error)
+	Fun func(map[string]EnvVal, parserToken) (parserToken, error)
 }
 
 func (e EnvFunc) GetType() EnvValType {
@@ -33,9 +33,9 @@ func (e EnvSymbol) GetType() EnvValType {
 }
 
 // var Env = make(map[string]EnvFunc)
-var Env = make(map[string]EnvVal, 4)
+var GlobalEnv = make(map[string]EnvVal, 0)
 
-func initEvaluator() {
+func initEvaluator(Env map[string]EnvVal) map[string]EnvVal {
 	Env["+"] = EnvFunc{Fun: add}
 	Env["-"] = EnvFunc{Fun: sub}
 	Env["*"] = EnvFunc{Fun: mul}
@@ -47,9 +47,10 @@ func initEvaluator() {
 	Env["join"] = EnvFunc{Fun: join}
 	Env["eval"] = EnvFunc{Fun: evalFun}
 	Env["def"] = EnvFunc{Fun: def}
+	return Env
 }
 
-func add(tree parserToken) (parserToken, error) {
+func add(Env map[string]EnvVal, tree parserToken) (parserToken, error) {
 	log.SetLevel(log.InfoLevel)
 	log.Debug(tree.Type, tree.Type == PARSER_LIST)
 	log.Debug(tree.Value)
@@ -59,7 +60,7 @@ func add(tree parserToken) (parserToken, error) {
 	eArgs := make([]parserToken, 0, len(args))
 
 	for _, arg := range args {
-		evaluatedArg, err := evaluate(arg)
+		evaluatedArg, err := evaluate(Env, arg)
 		if err != nil {
 			return parserToken{}, err
 		}
@@ -78,13 +79,13 @@ func add(tree parserToken) (parserToken, error) {
 	return parserToken{Type: PARSER_SYMBOL, Value: number{Value: total}}, nil
 }
 
-func sub(tree parserToken) (parserToken, error) {
+func sub(Env map[string]EnvVal, tree parserToken) (parserToken, error) {
 	assert(tree.Type == PARSER_LIST, "invalid argument type")
 	args := tree.Children
 	eArgs := make([]parserToken, 0, len(args))
 
 	for _, arg := range args {
-		evaluatedArg, err := evaluate(arg)
+		evaluatedArg, err := evaluate(Env, arg)
 		if err != nil {
 			return parserToken{}, err
 		}
@@ -101,13 +102,13 @@ func sub(tree parserToken) (parserToken, error) {
 	return parserToken{Type: PARSER_SYMBOL, Value: number{Value: total}}, nil
 }
 
-func mul(tree parserToken) (parserToken, error) {
+func mul(Env map[string]EnvVal, tree parserToken) (parserToken, error) {
 	assert(tree.Type == PARSER_LIST, "invalid argument type")
 	args := tree.Children
 	eArgs := make([]parserToken, 0, len(args))
 
 	for _, arg := range args {
-		evaluatedArg, err := evaluate(arg)
+		evaluatedArg, err := evaluate(Env, arg)
 		if err != nil {
 			return parserToken{}, err
 		}
@@ -124,13 +125,13 @@ func mul(tree parserToken) (parserToken, error) {
 	return parserToken{Type: PARSER_SYMBOL, Value: number{Value: total}}, nil
 }
 
-func div(tree parserToken) (parserToken, error) {
+func div(Env map[string]EnvVal, tree parserToken) (parserToken, error) {
 	assert(tree.Type == PARSER_LIST, "invalid argument type")
 	args := tree.Children
 	eArgs := make([]parserToken, 0, len(args))
 
 	for _, arg := range args {
-		evaluatedArg, err := evaluate(arg)
+		evaluatedArg, err := evaluate(Env, arg)
 		if err != nil {
 			return parserToken{}, err
 		}
@@ -147,19 +148,19 @@ func div(tree parserToken) (parserToken, error) {
 	return parserToken{Type: PARSER_SYMBOL, Value: number{Value: total}}, nil
 }
 
-func quote(tree parserToken) (parserToken, error) {
+func quote(Env map[string]EnvVal, tree parserToken) (parserToken, error) {
 	assert(tree.Type == PARSER_LIST, "invalid argument type")
 	nodes := tree.Children
 
 	return parserToken{Type: PARSER_LIST, Children: nodes[1:]}, nil
 }
 
-func list(tree parserToken) (parserToken, error) {
+func list(Env map[string]EnvVal, tree parserToken) (parserToken, error) {
 	assert(tree.Type == PARSER_LIST, "invalid argument type")
 	nodes := tree.Children
 	eNodes := make([]parserToken, 0, len(nodes))
 	for _, node := range nodes[1:] {
-		evaluatedNode, err := evaluate(node)
+		evaluatedNode, err := evaluate(Env, node)
 		if err != nil {
 			return parserToken{}, err
 		}
@@ -169,33 +170,33 @@ func list(tree parserToken) (parserToken, error) {
 	return parserToken{Type: PARSER_LIST, Children: eNodes}, nil
 }
 
-func head(tree parserToken) (parserToken, error) {
+func head(Env map[string]EnvVal, tree parserToken) (parserToken, error) {
 	assert(tree.Type == PARSER_LIST, "invalid argument type")
 	nodes := tree.Children
-	child1, err := evaluate(nodes[1])
+	child1, err := evaluate(Env, nodes[1])
 	if err != nil {
 		return parserToken{}, err
 	}
 	return child1.Children[0], nil
 }
 
-func tail(tree parserToken) (parserToken, error) {
+func tail(Env map[string]EnvVal, tree parserToken) (parserToken, error) {
 	assert(tree.Type == PARSER_LIST, "invalid argument type")
 	nodes := tree.Children
-	child1, err := evaluate(nodes[1])
+	child1, err := evaluate(Env, nodes[1])
 	if err != nil {
 		return parserToken{}, err
 	}
 	return parserToken{Type: PARSER_LIST, Children: child1.Children[1:]}, nil
 }
 
-func join(tree parserToken) (parserToken, error) {
+func join(Env map[string]EnvVal, tree parserToken) (parserToken, error) {
 	assert(tree.Type == PARSER_LIST, "invalid argument type")
 	nodes := tree.Children
 	enodes := make([]parserToken, 0, len(nodes))
 	joinCnt := 0
 	for _, node := range nodes[1:] {
-		evaluatedNode, err := evaluate(node)
+		evaluatedNode, err := evaluate(Env, node)
 		if err != nil {
 			return parserToken{}, err
 		}
@@ -210,24 +211,24 @@ func join(tree parserToken) (parserToken, error) {
 	return parserToken{Type: PARSER_LIST, Children: child1}, nil
 }
 
-func evalFun(tree parserToken) (parserToken, error) {
+func evalFun(Env map[string]EnvVal, tree parserToken) (parserToken, error) {
 	assert(tree.Type == PARSER_LIST, "invalid argument type")
 	nodes := tree.Children
-	child1, err := evaluate(nodes[1])
+	child1, err := evaluate(Env, nodes[1])
 	if err != nil {
 		return parserToken{}, err
 	}
-	return evaluate(child1)
+	return evaluate(Env, child1)
 }
 
-func def(tree parserToken) (parserToken, error) {
+func def(Env map[string]EnvVal, tree parserToken) (parserToken, error) {
 	// (def a 5)
 	assert(tree.Type == PARSER_LIST, "invalid argument type")
 	nodes := tree.Children
 	variable := nodes[1]
 	assert(variable.Type == PARSER_SYMBOL, "invalid argument type")
 	assert(variable.Value.GetType() == SYMBOL, "invalid argument type")
-	value, err := evaluate(nodes[2])
+	value, err := evaluate(Env, nodes[2])
 	if err != nil {
 		return parserToken{}, err
 	}
@@ -235,7 +236,7 @@ func def(tree parserToken) (parserToken, error) {
 	Env[variable.Value.(symbol).Value] = EnvSymbol{Val: value}
 	return parserToken{}, nil
 }
-func evaluate(tree parserToken) (parserToken, error) {
+func evaluate(Env map[string]EnvVal, tree parserToken) (parserToken, error) {
 	if tree.Type == PARSER_SYMBOL {
 		switch tree.Value.(type) {
 		case symbol:
@@ -262,7 +263,7 @@ func evaluate(tree parserToken) (parserToken, error) {
 			return tree, nil
 		}
 
-		operationPT, err := evaluate(tokens[0])
+		operationPT, err := evaluate(Env, tokens[0])
 		if err != nil {
 			return parserToken{}, err
 		}
@@ -273,7 +274,7 @@ func evaluate(tree parserToken) (parserToken, error) {
 			return parserToken{}, fmt.Errorf("unknown operation: %s", operationVal)
 		}
 		assert(fun.GetType() == ENVVAL_FUNCTION, "invalid operation type")
-		return fun.(EnvFunc).Fun(tree)
+		return fun.(EnvFunc).Fun(Env, tree)
 
 	}
 }

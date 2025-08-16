@@ -20,9 +20,9 @@ func print(tree parserToken) {
 	}
 }
 
-func init() {
-	initEvaluator()
-}
+// func init() {
+// 	GlobalEnv = initEvaluator(GlobalEnv)
+// }
 
 func repl(input string) {
 	switch input {
@@ -36,7 +36,7 @@ func repl(input string) {
 			return
 		}
 		log.Debug("Tree:", tree)
-		evaluatedTree, err := evaluate(tree)
+		evaluatedTree, err := evaluate(GlobalEnv, tree)
 		if err != nil {
 			fmt.Println("Evaluate Error:", err)
 			return
@@ -45,6 +45,7 @@ func repl(input string) {
 	}
 }
 func main() {
+	_ = initEvaluator(GlobalEnv)
 	setupInputReader()
 	fmt.Println("Exiting...")
 }
