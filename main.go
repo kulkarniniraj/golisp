@@ -46,4 +46,5 @@ func repl(input string) {
 }
 func main() {
 	setupInputReader()
+	fmt.Println("Exiting...")
 }

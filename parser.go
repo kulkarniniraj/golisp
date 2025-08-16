@@ -88,8 +88,8 @@ func parse(tokens []token) (parserToken, error) {
 			idx++
 		}
 		if len(stack) != 1 {
-			log.Error("Stack size is not 1, ", len(stack))
-			log.Error("Stack: ", stack)
+			log.Debug("Stack size is not 1, ", len(stack))
+			log.Debug("Stack: ", stack)
 			return parserToken{}, fmt.Errorf("cannot parse to single list")
 		}
 		return stack[0], nil
