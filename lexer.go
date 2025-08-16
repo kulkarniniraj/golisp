@@ -6,90 +6,47 @@ import (
 	"strconv"
 )
 
-type TokenType int
-
-const (
-	OPEN_PAREN TokenType = iota
-	CLOSE_PAREN
-	SYMBOL
-	NUMBER
-	EMPTY
-)
-
-func (t TokenType) String() string {
-	switch t {
-	case OPEN_PAREN:
-		return "OPEN_PAREN"
-	case CLOSE_PAREN:
-		return "CLOSE_PAREN"
-	case SYMBOL:
-		return "SYMBOL"
-	case NUMBER:
-		return "NUMBER"
-	default:
-		return "UNKNOWN"
-	}
+type LexToken interface {
+	lexTokenMarker()
 }
 
-type token interface {
-	GetType() TokenType
+type LexEmpty struct {
 }
-
-type empty struct {
+type LexOpenParen struct {
 }
-
-func (e empty) GetType() TokenType {
-	return EMPTY
+type LexCloseParen struct {
 }
-
-func (e empty) String() string {
-	return fmt.Sprintf(" %s ", e.GetType().String())
-}
-
-type symbol struct {
-	Type  TokenType // open paren, close paren, operator
+type LexSymbol struct {
 	Value string
 }
-
-func (s symbol) GetType() TokenType {
-	return s.Type
-}
-
-func (s symbol) String() string {
-	return fmt.Sprintf(" %s: \"%s\" ", s.Type.String(), s.Value)
-}
-
-type number struct {
+type LexNumber struct {
 	Value float64
 }
 
-func (n number) GetType() TokenType {
-	return NUMBER
-}
+func (e LexEmpty) lexTokenMarker()      {}
+func (e LexOpenParen) lexTokenMarker()  {}
+func (e LexCloseParen) lexTokenMarker() {}
+func (e LexSymbol) lexTokenMarker()     {}
+func (e LexNumber) lexTokenMarker()     {}
 
-func (n number) String() string {
-	return fmt.Sprintf(" %s: %f ", n.GetType().String(), n.Value)
-}
-
-func matchToToken(match []string) (token, error) {
+func matchToToken(match []string) (LexToken, error) {
 	for idx, val := range match {
 		if idx == 0 || idx == 1 || val == "" {
 			continue
 		}
-		//  whiteSpace, number, openParen, closeParen, operator, errorPat
 
 		switch idx {
 		case 2:
-			return empty{}, nil
+			return LexEmpty{}, nil
 		case 3:
 			fVal, _ := strconv.ParseFloat(val, 64)
-			return number{fVal}, nil
+			return LexNumber{fVal}, nil
 		case 5:
-			return symbol{OPEN_PAREN, val}, nil
+			return LexOpenParen{}, nil
 		case 6:
-			return symbol{CLOSE_PAREN, val}, nil
+			return LexCloseParen{}, nil
 		case 7:
-			return symbol{SYMBOL, val}, nil
+			return LexSymbol{val}, nil
 		default:
 			return nil, fmt.Errorf("invalid token")
 		}
@@ -97,8 +54,8 @@ func matchToToken(match []string) (token, error) {
 	return nil, fmt.Errorf("invalid token")
 }
 
-func Scan(input string) ([]token, error) {
-	var tokens []token
+func Scan(input string) ([]LexToken, error) {
+	var tokens []LexToken
 	whiteSpace := `(?P<ws>\s+)`
 	symbolChar := `[a-zA-Z0-9+\-*/_=<>@$%&?!~^]`
 	operator := `(?P<op>` + symbolChar + `+)`
@@ -116,7 +73,7 @@ func Scan(input string) ([]token, error) {
 		if err != nil {
 			return nil, err
 		}
-		if mToken == (empty{}) {
+		if mToken == (LexEmpty{}) {
 			continue
 		}
 		tokens = append(tokens, mToken)

@@ -4,20 +4,20 @@ import "testing"
 
 func TestScan(t *testing.T) {
 	input := "(+ 1 2 3 (* 5 6 7) 8)"
-	exp_output := []token{
-		symbol{OPEN_PAREN, "("},
-		symbol{SYMBOL, "+"},
-		number{Value: 1},
-		number{Value: 2},
-		number{Value: 3},
-		symbol{OPEN_PAREN, "("},
-		symbol{SYMBOL, "*"},
-		number{Value: 5},
-		number{Value: 6},
-		number{Value: 7},
-		symbol{CLOSE_PAREN, ")"},
-		number{Value: 8},
-		symbol{CLOSE_PAREN, ")"},
+	exp_output := []LexToken{
+		LexOpenParen{},
+		LexSymbol{"+"},
+		LexNumber{Value: 1},
+		LexNumber{Value: 2},
+		LexNumber{Value: 3},
+		LexOpenParen{},
+		LexSymbol{"*"},
+		LexNumber{Value: 5},
+		LexNumber{Value: 6},
+		LexNumber{Value: 7},
+		LexCloseParen{},
+		LexNumber{Value: 8},
+		LexCloseParen{},
 	}
 	tokens, err := Scan(input)
 	if err != nil {
