@@ -78,41 +78,49 @@ func TestEvaluateArithmetic(t *testing.T) {
 	}
 }
 
-// func TestEvaluateListOps(t *testing.T) {
-// 	initEvaluator(GlobalEnv)
-// 	input := "(head (list 1 2 3))"
-// 	exp_output := float64(1)
-// 	tokens, _ := Scan(input)
-// 	tree, _ := parse(tokens)
-// 	output, _ := evaluate(GlobalEnv, tree)
-// 	if output.Value.(number).Value != exp_output {
-// 		t.Errorf("Expected %f, got %f", exp_output, output.Value.(number).Value)
-// 	}
-// }
+func TestEvaluateListOps(t *testing.T) {
+	initEvaluator(GlobalEnv)
+	input := "(head (list 1 2 3))"
+	exp_output := float64(1)
+	tokens, _ := Scan(input)
+	tree, _ := parse(tokens)
+	output, _ := evaluate(GlobalEnv, tree)
+	if output.(ParserNumber).Value != exp_output {
+		t.Errorf("Expected %f, got %f", exp_output, output.(ParserNumber).Value)
+	}
+}
 
-// func TestEvaluateListOps2(t *testing.T) {
-// 	initEvaluator(GlobalEnv)
-// 	input := "(tail (list 1 2 3))"
-// 	exp_output := parserToken{Type: PARSER_LIST, Children: []parserToken{{Type: PARSER_SYMBOL, Value: number{Value: 2}}, {Type: PARSER_SYMBOL, Value: number{Value: 3}}}}
-// 	tokens, _ := Scan(input)
-// 	tree, _ := parse(tokens)
-// 	output, _ := evaluate(GlobalEnv, tree)
-// 	if len(output.Children) != len(exp_output.Children) {
-// 		t.Errorf("Expected %v, got %v", exp_output, output.Value.(number).Value)
-// 	}
-// }
+func TestEvaluateListOps2(t *testing.T) {
+	initEvaluator(GlobalEnv)
+	input := "(tail (list 1 2 3))"
+	exp_output := ParserList{Children: []ParserToken{
+		ParserNumber{Value: 2},
+		ParserNumber{Value: 3}}}
+	tokens, _ := Scan(input)
+	tree, _ := parse(tokens)
+	output, _ := evaluate(GlobalEnv, tree)
+	if len(output.(ParserList).Children) != len(exp_output.Children) {
+		t.Errorf("Expected %v, got %v", exp_output, output)
+	}
+}
 
-// func TestEvaluateListOps3(t *testing.T) {
-// 	initEvaluator(GlobalEnv)
-// 	input := "(join (list 1 2 3) (list 4 5 6))"
-// 	exp_output := parserToken{Type: PARSER_LIST, Children: []parserToken{{Type: PARSER_SYMBOL, Value: number{Value: 1}}, {Type: PARSER_SYMBOL, Value: number{Value: 2}}, {Type: PARSER_SYMBOL, Value: number{Value: 3}}, {Type: PARSER_SYMBOL, Value: number{Value: 4}}, {Type: PARSER_SYMBOL, Value: number{Value: 5}}, {Type: PARSER_SYMBOL, Value: number{Value: 6}}}}
-// 	tokens, _ := Scan(input)
-// 	tree, _ := parse(tokens)
-// 	output, _ := evaluate(GlobalEnv, tree)
-// 	if len(output.Children) != len(exp_output.Children) {
-// 		t.Errorf("Expected %v, got %v", exp_output, output.Value.(number).Value)
-// 	}
-// }
+func TestEvaluateListOps3(t *testing.T) {
+	initEvaluator(GlobalEnv)
+	input := "(join (list 1 2 3) (list 4 5 6))"
+	exp_output := ParserList{Children: []ParserToken{
+		ParserNumber{Value: 1},
+		ParserNumber{Value: 2},
+		ParserNumber{Value: 3},
+		ParserNumber{Value: 4},
+		ParserNumber{Value: 5},
+		ParserNumber{Value: 6}}}
+	tokens, _ := Scan(input)
+	tree, _ := parse(tokens)
+	output, _ := evaluate(GlobalEnv, tree)
+	if len(output.(ParserList).Children) != len(exp_output.Children) {
+		t.Errorf("Expected %v, got %v", exp_output, output)
+	}
+}
 
 // // // tes quote
 // // func TestEvaluateQuote(t *testing.T) {

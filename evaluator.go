@@ -13,11 +13,11 @@ func initEvaluator(Env map[string]ParserToken) map[string]ParserToken {
 	Env["-"] = ParserFunc{Fun: sub}
 	Env["*"] = ParserFunc{Fun: mul}
 	Env["/"] = ParserFunc{Fun: div}
-	// Env["quote"] = ParserFunc{Fun: quote}
-	// Env["list"] = ParserFunc{Fun: list}
-	// Env["head"] = ParserFunc{Fun: head}
-	// Env["tail"] = ParserFunc{Fun: tail}
-	// Env["join"] = ParserFunc{Fun: join}
+	Env["quote"] = ParserFunc{Fun: quote}
+	Env["list"] = ParserFunc{Fun: list}
+	Env["head"] = ParserFunc{Fun: head}
+	Env["tail"] = ParserFunc{Fun: tail}
+	Env["join"] = ParserFunc{Fun: join}
 	// Env["eval"] = ParserFunc{Fun: evalFun}
 	// Env["def"] = ParserFunc{Fun: def}
 	return Env
@@ -136,68 +136,83 @@ func div(Env map[string]ParserToken, tree ParserToken) (ParserToken, error) {
 	return ParserNumber{Value: total}, nil
 }
 
-// func quote(Env map[string]EnvVal, tree parserToken) (parserToken, error) {
-// 	assert(tree.Type == PARSER_LIST, "invalid argument type")
-// 	nodes := tree.Children
+func quote(Env map[string]ParserToken, tree ParserToken) (ParserToken, error) {
+	list, ok := tree.(ParserList)
+	if !ok {
+		return ParserList{}, fmt.Errorf("invalid argument type")
+	}
+	nodes := list.Children
 
-// 	return parserToken{Type: PARSER_LIST, Children: nodes[1:]}, nil
-// }
+	return nodes[1], nil
+}
 
-// func list(Env map[string]EnvVal, tree parserToken) (parserToken, error) {
-// 	assert(tree.Type == PARSER_LIST, "invalid argument type")
-// 	nodes := tree.Children
-// 	eNodes := make([]parserToken, 0, len(nodes))
-// 	for _, node := range nodes[1:] {
-// 		evaluatedNode, err := evaluate(Env, node)
-// 		if err != nil {
-// 			return parserToken{}, err
-// 		}
-// 		eNodes = append(eNodes, evaluatedNode)
-// 	}
+func list(Env map[string]ParserToken, tree ParserToken) (ParserToken, error) {
+	list, ok := tree.(ParserList)
+	if !ok {
+		return ParserList{}, fmt.Errorf("invalid argument type")
+	}
+	nodes := list.Children
+	eNodes := make([]ParserToken, 0, len(nodes))
+	for _, node := range nodes[1:] {
+		evaluatedNode, err := evaluate(Env, node)
+		if err != nil {
+			return ParserList{}, err
+		}
+		eNodes = append(eNodes, evaluatedNode)
+	}
 
-// 	return parserToken{Type: PARSER_LIST, Children: eNodes}, nil
-// }
+	return ParserList{Children: eNodes}, nil
+}
 
-// func head(Env map[string]EnvVal, tree parserToken) (parserToken, error) {
-// 	assert(tree.Type == PARSER_LIST, "invalid argument type")
-// 	nodes := tree.Children
-// 	child1, err := evaluate(Env, nodes[1])
-// 	if err != nil {
-// 		return parserToken{}, err
-// 	}
-// 	return child1.Children[0], nil
-// }
+func head(Env map[string]ParserToken, tree ParserToken) (ParserToken, error) {
+	list, ok := tree.(ParserList)
+	if !ok {
+		return ParserList{}, fmt.Errorf("invalid argument type")
+	}
+	nodes := list.Children
+	child1, err := evaluate(Env, nodes[1])
+	if err != nil {
+		return ParserList{}, err
+	}
+	return child1.(ParserList).Children[0], nil
+}
 
-// func tail(Env map[string]EnvVal, tree parserToken) (parserToken, error) {
-// 	assert(tree.Type == PARSER_LIST, "invalid argument type")
-// 	nodes := tree.Children
-// 	child1, err := evaluate(Env, nodes[1])
-// 	if err != nil {
-// 		return parserToken{}, err
-// 	}
-// 	return parserToken{Type: PARSER_LIST, Children: child1.Children[1:]}, nil
-// }
+func tail(Env map[string]ParserToken, tree ParserToken) (ParserToken, error) {
+	list, ok := tree.(ParserList)
+	if !ok {
+		return ParserList{}, fmt.Errorf("invalid argument type")
+	}
+	nodes := list.Children
+	child1, err := evaluate(Env, nodes[1])
+	if err != nil {
+		return ParserList{}, err
+	}
+	return ParserList{Children: child1.(ParserList).Children[1:]}, nil
+}
 
-// func join(Env map[string]EnvVal, tree parserToken) (parserToken, error) {
-// 	assert(tree.Type == PARSER_LIST, "invalid argument type")
-// 	nodes := tree.Children
-// 	enodes := make([]parserToken, 0, len(nodes))
-// 	joinCnt := 0
-// 	for _, node := range nodes[1:] {
-// 		evaluatedNode, err := evaluate(Env, node)
-// 		if err != nil {
-// 			return parserToken{}, err
-// 		}
-// 		joinCnt += len(evaluatedNode.Children)
-// 		enodes = append(enodes, evaluatedNode)
-// 	}
+func join(Env map[string]ParserToken, tree ParserToken) (ParserToken, error) {
+	list, ok := tree.(ParserList)
+	if !ok {
+		return ParserList{}, fmt.Errorf("invalid argument type")
+	}
+	nodes := list.Children
+	enodes := make([]ParserToken, 0, len(nodes))
+	joinCnt := 0
+	for _, node := range nodes[1:] {
+		evaluatedNode, err := evaluate(Env, node)
+		if err != nil {
+			return ParserList{}, err
+		}
+		joinCnt += len(evaluatedNode.(ParserList).Children)
+		enodes = append(enodes, evaluatedNode)
+	}
 
-// 	child1 := make([]parserToken, 0, joinCnt)
-// 	for _, node := range enodes {
-// 		child1 = append(child1, node.Children...)
-// 	}
-// 	return parserToken{Type: PARSER_LIST, Children: child1}, nil
-// }
+	child1 := make([]ParserToken, 0, joinCnt)
+	for _, node := range enodes {
+		child1 = append(child1, node.(ParserList).Children...)
+	}
+	return ParserList{Children: child1}, nil
+}
 
 // func evalFun(Env map[string]EnvVal, tree parserToken) (parserToken, error) {
 // 	assert(tree.Type == PARSER_LIST, "invalid argument type")
