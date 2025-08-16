@@ -257,9 +257,20 @@ func lambda(Env map[string]ParserToken, tree ParserToken) (ParserToken, error) {
 	if !ok {
 		return ParserList{}, fmt.Errorf("invalid argument type")
 	}
-	assert(len(list.Children) == 3, "Need arglist and body for lambda")
+
+	if len(list.Children) != 3 {
+		return ParserList{}, fmt.Errorf("Need arglist and body for lambda")
+	}
 
 	arglist := list.Children[1].(ParserList).Children
+	argCnt := len(arglist)
+
+	// does last arg start with &
+	var restArg string = ""
+	if arglist[argCnt-1].(ParserSymbol).Value[0] == '&' {
+		restArg = arglist[argCnt-1].(ParserSymbol).Value[1:]
+		arglist = arglist[:argCnt-1]
+	}
 	body := list.Children[2]
 
 	fun := func(Env map[string]ParserToken, tree ParserToken) (ParserToken, error) {
@@ -268,11 +279,16 @@ func lambda(Env map[string]ParserToken, tree ParserToken) (ParserToken, error) {
 			return ParserList{}, fmt.Errorf("invalid argument type")
 		}
 		args := list.Children[1:]
-		assert(len(args) == len(arglist), "Number of arguments does not match")
+		if len(args) != len(arglist) && restArg == "" {
+			return ParserList{}, fmt.Errorf("Number of arguments does not match")
+		}
 
 		localEnv := maps.Clone(Env)
-		for idx, arg := range args {
-			localEnv[arglist[idx].(ParserSymbol).Value] = arg
+		for idx := range arglist {
+			localEnv[arglist[idx].(ParserSymbol).Value] = args[idx]
+		}
+		if restArg != "" {
+			localEnv[restArg] = ParserList{Children: args[len(arglist):]}
 		}
 
 		output, err := evaluate(localEnv, body)
