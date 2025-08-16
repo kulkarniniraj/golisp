@@ -6,13 +6,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type parserTokenType int
-
-const (
-	PARSER_SYMBOL parserTokenType = iota
-	PARSER_LIST
-)
-
 type ParserToken interface {
 	parserTokenMarker()
 }
