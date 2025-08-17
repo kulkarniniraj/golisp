@@ -22,11 +22,12 @@ func initEvaluator(Env map[string]ParserToken) map[string]ParserToken {
 	Env["eval"] = ParserFunc{Fun: evalFun}
 	Env["def"] = ParserFunc{Fun: def}
 	Env["lambda"] = ParserFunc{Fun: lambda}
+	Env["eq"] = ParserFunc{Fun: eq}
+	Env["if"] = ParserFunc{Fun: ifFun}
 	return Env
 }
 
 func add(Env map[string]ParserToken, tree ParserToken) (ParserToken, error) {
-	log.SetLevel(log.InfoLevel)
 	list, ok := tree.(ParserList)
 	if !ok {
 		return ParserList{}, fmt.Errorf("invalid argument type")
@@ -274,21 +275,31 @@ func lambda(Env map[string]ParserToken, tree ParserToken) (ParserToken, error) {
 	body := list.Children[2]
 
 	fun := func(Env map[string]ParserToken, tree ParserToken) (ParserToken, error) {
+		log.Debug("Executing Lambda: ", tree)
 		list, ok := tree.(ParserList)
 		if !ok {
 			return ParserList{}, fmt.Errorf("invalid argument type")
 		}
 		args := list.Children[1:]
-		if len(args) != len(arglist) && restArg == "" {
+		// evaluate args
+		eArgs := make([]ParserToken, 0, len(args))
+		for _, arg := range args {
+			evaluatedArg, err := evaluate(Env, arg)
+			if err != nil {
+				return ParserList{}, err
+			}
+			eArgs = append(eArgs, evaluatedArg)
+		}
+		if len(eArgs) != len(arglist) && restArg == "" {
 			return ParserList{}, fmt.Errorf("Number of arguments does not match")
 		}
 
 		localEnv := maps.Clone(Env)
 		for idx := range arglist {
-			localEnv[arglist[idx].(ParserSymbol).Value] = args[idx]
+			localEnv[arglist[idx].(ParserSymbol).Value] = eArgs[idx]
 		}
 		if restArg != "" {
-			localEnv[restArg] = ParserList{Children: args[len(arglist):]}
+			localEnv[restArg] = ParserList{Children: eArgs[len(arglist):]}
 		}
 
 		output, err := evaluate(localEnv, body)
@@ -299,6 +310,76 @@ func lambda(Env map[string]ParserToken, tree ParserToken) (ParserToken, error) {
 		return output, nil
 	}
 	return ParserFunc{Fun: fun}, nil
+}
+
+func eq(Env map[string]ParserToken, tree ParserToken) (ParserToken, error) {
+	list, ok := tree.(ParserList)
+	if !ok {
+		return ParserList{}, fmt.Errorf("invalid argument type")
+	}
+	args := list.Children
+	log.Debug("args: ", args)
+	eArgs := make([]ParserToken, 0, len(args))
+
+	for _, arg := range args {
+		evaluatedArg, err := evaluate(Env, arg)
+		if err != nil {
+			return ParserList{}, err
+		}
+		eArgs = append(eArgs, evaluatedArg)
+	}
+	if len(eArgs) != 3 {
+		return ParserList{}, fmt.Errorf("invalid argument type", eArgs)
+	}
+	log.Debug("eArgs: ", eArgs)
+	switch eArgs[1].(type) {
+	case ParserBool:
+		return ParserBool{
+			Value: eArgs[1].(ParserBool).Value == eArgs[2].(ParserBool).Value,
+		}, nil
+	case ParserNumber:
+		return ParserBool{
+			Value: eArgs[1].(ParserNumber).Value == eArgs[2].(ParserNumber).Value,
+		}, nil
+	case ParserSymbol:
+		return ParserBool{
+			Value: eArgs[1].(ParserSymbol).Value == eArgs[2].(ParserSymbol).Value,
+		}, nil
+	case ParserList:
+		if len(eArgs[1].(ParserList).Children) != len(eArgs[2].(ParserList).Children) {
+			return ParserBool{Value: false}, nil
+		}
+		for idx := range eArgs[1].(ParserList).Children {
+			if eArgs[1].(ParserList).Children[idx] != eArgs[2].(ParserList).Children[idx] {
+				return ParserBool{Value: false}, nil
+			}
+		}
+		return ParserBool{Value: true}, nil
+	default:
+		return ParserList{}, fmt.Errorf("invalid argument type")
+	}
+}
+
+func ifFun(Env map[string]ParserToken, tree ParserToken) (ParserToken, error) {
+	list, ok := tree.(ParserList)
+	if !ok {
+		return ParserList{}, fmt.Errorf("invalid argument type")
+	}
+	args := list.Children
+	if len(args) != 4 {
+		return ParserList{}, fmt.Errorf("invalid argument type")
+	}
+	condition, err := evaluate(Env, args[1])
+	log.Debug("Condition: ", condition)
+	if err != nil {
+		return ParserList{}, err
+	}
+	if condition.(ParserBool).Value {
+		log.Debug("Condition is true")
+		return evaluate(Env, args[2])
+	}
+	log.Debug("Condition is false")
+	return evaluate(Env, args[3])
 }
 
 func evaluate(Env map[string]ParserToken, tree ParserToken) (ParserToken, error) {
