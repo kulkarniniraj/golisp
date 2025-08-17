@@ -49,6 +49,8 @@ func repl(input string) {
 }
 
 func main() {
+	log.SetLevel(log.InfoLevel)
+	log.SetReportCaller(true)
 	_ = initEvaluator(GlobalEnv)
 	setupInputReader()
 	fmt.Println("Exiting...")
