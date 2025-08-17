@@ -26,49 +26,15 @@ type ParserFunc struct {
 	Fun func(map[string]ParserToken, ParserToken) (ParserToken, error)
 }
 
+type ParserBool struct {
+	Value bool
+}
+
 func (p ParserNumber) parserTokenMarker() {}
 func (p ParserSymbol) parserTokenMarker() {}
 func (p ParserList) parserTokenMarker()   {}
 func (p ParserFunc) parserTokenMarker()   {}
-
-// func (p ParserToken) String() string {
-// 	switch p.(type) {
-// 	case ParserNumber:
-// 		return fmt.Sprintf("%0.2f", p.(ParserNumber).Value)
-// 	case ParserSymbol:
-// 		return p.(ParserSymbol).Value
-// 	case ParserList:
-// 		strs := make([]string, 0, len(p.(ParserList).Children))
-// 		for _, child := range p.(ParserList).Children {
-// 			strs = append(strs, child.String())
-// 		}
-// 		return "(" + strings.Join(strs, " ") + ")"
-// 	default:
-// 		return ""
-// 	}
-// }
-
-// func (p parserToken) String() string {
-// 	switch p.Type {
-// 	case PARSER_SYMBOL:
-// 		switch p.Value.(type) {
-// 		case symbol:
-// 			return p.Value.(symbol).Value
-// 		case number:
-// 			return fmt.Sprintf("%0.2f", p.Value.(number).Value)
-// 		default:
-// 			return ""
-// 		}
-// 	case PARSER_LIST:
-// 		strs := make([]string, 0, len(p.Children))
-// 		for _, child := range p.Children {
-// 			strs = append(strs, child.String())
-// 		}
-// 		return "(" + strings.Join(strs, " ") + ")"
-// 	default:
-// 		return ""
-// 	}
-// }
+func (p ParserBool) parserTokenMarker()   {}
 
 func isOpenParen(token ParserToken) bool {
 	symbol, ok := token.(ParserSymbol)
@@ -79,7 +45,6 @@ func isOpenParen(token ParserToken) bool {
 }
 
 func parse(tokens []LexToken) (ParserToken, error) {
-	log.SetLevel(log.InfoLevel)
 	log.Debug("Parsing tokens:", len(tokens))
 	// stack of parserToken, size of stack is len(tokens)
 	stack := make([]ParserToken, 0, len(tokens))
@@ -113,7 +78,15 @@ func parse(tokens []LexToken) (ParserToken, error) {
 			stack = append(stack, ParserNumber{Value: tokens[idx].(LexNumber).Value})
 			idx++
 		case LexSymbol:
-			stack = append(stack, ParserSymbol{Value: tokens[idx].(LexSymbol).Value})
+			symbol := tokens[idx].(LexSymbol)
+			switch symbol.Value {
+			case "true":
+				stack = append(stack, ParserBool{Value: true})
+			case "false":
+				stack = append(stack, ParserBool{Value: false})
+			default:
+				stack = append(stack, ParserSymbol{Value: symbol.Value})
+			}
 			idx++
 		default:
 			return ParserList{}, fmt.Errorf("invalid token type")
