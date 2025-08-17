@@ -25,7 +25,7 @@ A lisp interpreter written in Go, based on the [Building Your Own Lisp](https://
 - [x] eval function
 - [x] def for variable and function definition
 - [x] lambda function, including variable arguments
-- [ ] conditional operations, if
+- [x] conditional operations, if
 - [ ] string operations
 - [ ] standard library
 
